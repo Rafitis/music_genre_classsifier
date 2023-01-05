@@ -1,7 +1,8 @@
 import os
 import pandas as pd
 import numpy as np
-from ast import literal_eval
+import json
+import librosa
 
 DATASET_PATH = r'data\test'
 METADATA_PATH = r'data\fma_metadata\raw_tracks.csv'
@@ -29,7 +30,20 @@ def save_mfcc(dataset_path, json_path, n_mfcc=13, num_segments=5):
                 genre_data = metadata.loc[metadata['track_id'] == track_id]['track_genres'].values[0]
                 change_type = lambda genre_data: list(eval(genre_data))[0] # Función que cambia un string a lista de dict
                 genre_data = change_type(genre_data)
-                data['mapping'] = genre_data['genre_title']
-                data['labels'] = genre_data['genre_id']
+                data['mapping'].append(genre_data['genre_title'])
+                data['labels'].append(genre_data['genre_id'])
+
+                # Extraer los MFCCs
+                file_path = os.path.join(dirpath, track)
+                signal, sr = librosa.load(file_path)
+                mfcc = librosa.feature.mfcc(signal, sr, n_mfcc=n_mfcc, hop_length=2048)
+                mfcc = mfcc.T
+
+                data["mfcc"].append(mfcc.tolist())
+
+                print(f"{track} processed")
+
+    with open(json_path, 'w') as fp:
+        json.dump(data, fp, indent=4)     
 
 save_mfcc(DATASET_PATH, JSON_PATH)
