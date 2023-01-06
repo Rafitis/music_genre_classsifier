@@ -2,17 +2,19 @@ import os
 import pandas as pd
 import numpy as np
 import json
+import pickle
 import librosa
 
 DATASET_PATH = r'data\test'
 METADATA_PATH = r'data\fma_metadata\raw_tracks.csv'
 JSON_PATH = r'data.json'
+PICKLE_PATH = r'data.pickle'
 
 def read_metadata(metadata_path):
     df = pd.read_csv(metadata_path)
     return df
 
-def save_mfcc(dataset_path, json_path, n_mfcc=13, num_segments=5):
+def save_mfcc(dataset_path, json_path, n_mfcc=13):
 
     # Dict data struct
     data = {
@@ -22,8 +24,8 @@ def save_mfcc(dataset_path, json_path, n_mfcc=13, num_segments=5):
     }
 
     metadata = read_metadata(METADATA_PATH)
-    # print(metadata.dtypes)
-    for i, (dirpath, dirnames, filenames) in enumerate(os.walk(dataset_path)):
+
+    for dirpath, _, filenames in os.walk(dataset_path):
         if dirpath is not dataset_path:
             for track in filenames:
                 track_id = int(track.split('.')[0])
@@ -44,6 +46,8 @@ def save_mfcc(dataset_path, json_path, n_mfcc=13, num_segments=5):
                 print(f"{track} processed")
 
     with open(json_path, 'w') as fp:
-        json.dump(data, fp, indent=4)     
+        json.dump(data, fp, indent=4)
+    with open(PICKLE_PATH, 'wb') as pickle_file:
+        pickle.dump(data, pickle_file)
 
 save_mfcc(DATASET_PATH, JSON_PATH)
