@@ -39,7 +39,7 @@ def save_mfcc(dataset_path, json_path, n_mfcc=13):
                 # Extraer los MFCCs
                 file_path = os.path.join(dirpath, track)
                 signal, sr = librosa.load(file_path)
-                mfcc = librosa.feature.mfcc(S=signal, sr=sr, n_mfcc=n_mfcc, hop_length=2048)
+                mfcc = librosa.feature.mfcc(y=signal, sr=sr, n_mfcc=n_mfcc, hop_length=2048)
                 mfcc = mfcc.T
 
                 data["mfcc"].append(mfcc.tolist())
