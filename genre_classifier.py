@@ -10,6 +10,8 @@ from torch import nn
 JSON_FILE = r"data.json"
 PICKLE_FILE = r"data.pickle"
 
+EPOCHS = 10
+
 
 def load_data(json_path):
 
@@ -43,8 +45,29 @@ class FeedForwardModel(torch.nn.Module):
         return predictions
 
 
-if __name__ == "__main__":
+def train_one_epoch(model, data_loader, loss_func, optimizer, device):
+    for inputs, targets in data_loader:
+        inputs, targets = inputs.to(device), targets.to(device)
 
+        predictions = model(inputs)
+        loss = loss_func(predictions, targets)
+
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+    print(f"Loss: {loss.item()}")
+
+
+def train(model, data_loader, loss_func, optimizer, device, epochs):
+    for i in range(epochs):
+        print(f"Epoch {i+1}")
+        train_one_epoch(model, data_loader, loss_func, optimizer, device)
+        print("----------------------")
+    print("Training Complete")
+
+
+def main():
     # Cargar datos
     inputs, targets = load_data(JSON_FILE)
 
@@ -53,8 +76,19 @@ if __name__ == "__main__":
 
     # Crear la NN
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    print(f"Using {device} device.")
+    print(f"Using {device} V{torch.version.cuda} device.")
 
-    # Compilar la red
+    dnn_net = FeedForwardModel().to(device)
+    loss_func = nn.CrossEntropyLoss()
+    optimizer = torch.optim.Adam(dnn_net.parameters, lr=0.0001)
 
     # Entrenar la red
+    train(dnn_net, X_train, loss_func, optimizer, device, EPOCHS)
+
+    torch.save(dnn_net.state_dict(), "dnn_model.pth")
+    print("Model Saved!")
+
+
+if __name__ == "__main__":
+
+    main()
