@@ -3,9 +3,11 @@ import json
 # import pickle
 
 import numpy as np
-from sklearn.model_selection import train_test_split
 import torch
 from torch import nn
+from torch.utils.data import DataLoader
+
+from fma_dataset import FMADataset
 
 JSON_FILE = r"data.json"
 PICKLE_FILE = r"data.pickle"
@@ -68,11 +70,12 @@ def train(model, data_loader, loss_func, optimizer, device, epochs):
 
 
 def main():
-    # Cargar datos
-    inputs, targets = load_data(JSON_FILE)
+    ANNOTATIONS_FILE = r"data\fma_metadata\raw_tracks.csv"
+    AUDIO_DIR = r"data\test"
 
-    # Separar en train y test
-    X_train, X_test, Y_train, Y_test = train_test_split(inputs, targets, test_size=0.2)
+    # Preprar Dataset
+    fma_data = FMADataset(ANNOTATIONS_FILE, AUDIO_DIR)
+    data_loader = DataLoader(fma_data, batch_size=64, shuffle=True)
 
     # Crear la NN
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -83,7 +86,7 @@ def main():
     optimizer = torch.optim.Adam(dnn_net.parameters, lr=0.0001)
 
     # Entrenar la red
-    train(dnn_net, X_train, loss_func, optimizer, device, EPOCHS)
+    train(dnn_net, data_loader, loss_func, optimizer, device, EPOCHS)
 
     torch.save(dnn_net.state_dict(), "dnn_model.pth")
     print("Model Saved!")
