@@ -5,9 +5,13 @@ import json
 import numpy as np
 import torch
 from torch import nn
+import torch.nn.functional as F
 from torch.utils.data import DataLoader
+import torchaudio
+from torchsummary import summary
 
 from fma_dataset import FMADataset
+from cnn_model import CNN_Model
 
 JSON_FILE = r"data.json"
 PICKLE_FILE = r"data.pickle"
@@ -25,26 +29,6 @@ def load_data(json_path):
 
     print(len(set(labels)))
     return mfccs, labels
-
-
-class FeedForwardModel(torch.nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.flatten = nn.Flatten()
-        self.dense_layers = nn.Sequential(
-            nn.Linear(512, 128),
-            nn.ReLU(),
-            nn.Linear(128, 64),
-            nn.ReLU(),
-            nn.Linear(64, 16),
-        )
-        self.softmax = nn.Softmax(dim=1)
-
-    def forward(self, input_data):
-        flatten_data = self.flatten(input_data)
-        logits = self.dense_layers(flatten_data)
-        predictions = self.softmax(logits)
-        return predictions
 
 
 def train_one_epoch(model, data_loader, loss_func, optimizer, device):
@@ -72,24 +56,34 @@ def train(model, data_loader, loss_func, optimizer, device, epochs):
 def main():
     ANNOTATIONS_FILE = r"data\fma_metadata\raw_tracks.csv"
     AUDIO_DIR = r"data\test"
+    SAMPLE_RATE = 22050
+    NUM_SAMPLES = 22050
 
-    # Preprar Dataset
-    fma_data = FMADataset(ANNOTATIONS_FILE, AUDIO_DIR)
-    data_loader = DataLoader(fma_data, batch_size=64, shuffle=True)
-
-    # Crear la NN
+    # Usar GPU si la hubiera.
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Using {device} V{torch.version.cuda} device.")
 
-    dnn_net = FeedForwardModel().to(device)
+    # Preprar Dataset
+    mel_spectrogram = torchaudio.transforms.MelSpectrogram(
+        sample_rate=SAMPLE_RATE,
+        n_fft=1024,
+        hop_length=512,
+        n_mels=64,
+    )
+    fma_data = FMADataset(ANNOTATIONS_FILE, AUDIO_DIR, mel_spectrogram, SAMPLE_RATE, NUM_SAMPLES, device)
+    data_loader = DataLoader(fma_data, batch_size=64, shuffle=True)
+
+    # Create CNN
+    cnn_net = CNN_Model(num_classes=16).to(device)
+    summary(cnn_net, input_size=(16, 64, 44))
     loss_func = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(dnn_net.parameters, lr=0.0001)
+    optimizer = torch.optim.Adam(cnn_net.parameters(), lr=0.0001)
 
     # Entrenar la red
-    train(dnn_net, data_loader, loss_func, optimizer, device, EPOCHS)
+    # train(dnn_net, data_loader, loss_func, optimizer, device, EPOCHS)
 
-    torch.save(dnn_net.state_dict(), "dnn_model.pth")
-    print("Model Saved!")
+    # torch.save(dnn_net.state_dict(), "dnn_model.pth")
+    # print("Model Saved!")
 
 
 if __name__ == "__main__":

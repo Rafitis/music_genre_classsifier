@@ -37,7 +37,7 @@ class FMADataset(Dataset):
         signal = self._mix_down_if_necessary(signal)
         signal = self._cut_if_necessary(signal)
         signal = self._right_pad_if_necessary(signal)
-        signal = self.transformation(signal)
+        # signal = self.transformation(signal)
         return signal, label
 
     def _cut_if_necessary(self, signal):
@@ -104,7 +104,8 @@ def main():
     fma = FMADataset(ANNOTATIONS_FILE, AUDIO_DIR, mel_spectrogram, SAMPLE_RATE, NUM_SAMPLES, device)
 
     print(f"Num Audios {len(fma)}")
-    _, label = fma[0]
+    train_data, label = fma[0]
+    print(train_data.shape)
     print(label)
 
 
