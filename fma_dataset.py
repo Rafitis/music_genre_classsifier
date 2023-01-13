@@ -7,11 +7,12 @@ from torch.utils.data import Dataset
 
 
 class FMADataset(Dataset):
-    def __init__(self, annotations_file, audio_dir, transformation, target_sample_rate):
+    def __init__(self, annotations_file, audio_dir, transformation, target_sample_rate, num_samples):
         self.annotations = pd.read_csv(annotations_file)
         self.audio_dir = audio_dir
         self.transformation = transformation
         self.target_sample_rate = target_sample_rate
+        self.num_samples = num_samples
 
     def __len__(self):
         return len(self.annotations)
@@ -23,8 +24,24 @@ class FMADataset(Dataset):
         signal, sr = torchaudio.load(audio_sample_path)
         signal = self._resample_if_necessary(signal, sr)
         signal = self._mix_down_if_necessary(signal)
+        signal = self._cut_if_necessary(signal)
+        signal = self._right_pad_if_necessary(signal)
         signal = self.transformation(signal)
         return signal, label
+
+    def _cut_if_necessary(self, signal):
+        # signal -> Tensor (1, num_samples)
+        if signal.shape[1] > self.num_samples:
+            signal = signal[:, : self.num_samples]
+        return signal
+
+    def _right_pad_if_necessary(self, signal):
+        length_signal = signal.shape[1]
+        if length_signal < self.num_samples:
+            num_missing_samples = self.num_samples - length_signal
+            last_dim_padding = (0, num_missing_samples)
+            signal = torch.nn.functional.pad(signal, last_dim_padding)
+        return signal
 
     def _resample_if_necessary(self, signal, sr):
         resampler = torchaudio.transforms.Resample(sr, self.target_sample_rate)
@@ -56,7 +73,8 @@ class FMADataset(Dataset):
 def main():
     ANNOTATIONS_FILE = r"data\fma_metadata\raw_tracks.csv"
     AUDIO_DIR = r"data\test"
-    SAMPLE_RATE = 16000
+    SAMPLE_RATE = 22050
+    NUM_SAMPLES = 22050
 
     mel_spectrogram = torchaudio.transforms.MelSpectrogram(
         sample_rate=SAMPLE_RATE,
@@ -65,7 +83,7 @@ def main():
         n_mels=64,
     )
 
-    fma = FMADataset(ANNOTATIONS_FILE, AUDIO_DIR, mel_spectrogram, SAMPLE_RATE)
+    fma = FMADataset(ANNOTATIONS_FILE, AUDIO_DIR, mel_spectrogram, SAMPLE_RATE, NUM_SAMPLES)
 
     print(f"Num Audios {len(fma)}")
     _, label = fma[0]
