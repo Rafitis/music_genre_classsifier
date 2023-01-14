@@ -75,7 +75,7 @@ def main():
 
     # Create CNN
     cnn_net = CNN_Model(num_classes=16).to(device)
-    summary(cnn_net, input_size=(16, 64, 44))
+    summary(cnn_net, input_size=(1, 64, 44))
     loss_func = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(cnn_net.parameters(), lr=0.0001)
 
