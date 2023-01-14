@@ -110,7 +110,7 @@ def main():
 
     df = pd.read_csv(ANNOTATIONS_FILE)
     tracks_id = []
-    for dirpath, _, filenames in os.walk(AUDIO_DIR):
+    for _, _, filenames in os.walk(AUDIO_DIR):
         for file in filenames:
             tracks_id.append(int(file.split(".")[0]))
     print(tracks_id)

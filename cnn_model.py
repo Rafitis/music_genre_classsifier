@@ -3,7 +3,7 @@ import torchaudio
 
 
 class Conv_2d(nn.Module):
-    def __init__(self, input_channels, output_channels, shape=3, pooling=2, dropout=0.1) -> None:
+    def __init__(self, input_channels, output_channels, pooling=2, dropout=0.1) -> None:
         super().__init__()
 
         self.conv = nn.Conv2d(input_channels, output_channels, kernel_size=3, stride=1, padding=2)
