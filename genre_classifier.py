@@ -31,9 +31,8 @@ def load_data(json_path):
     return mfccs, labels
 
 
-def train_one_epoch(model, data_loader, loss_func, optimizer, device):
+def train_one_epoch(model, data_loader, loss_func, optimizer):
     for inputs, targets in data_loader:
-        inputs, targets = inputs.to(device), targets.to(device)
 
         predictions = model(inputs)
         loss = loss_func(predictions, targets)
@@ -45,16 +44,16 @@ def train_one_epoch(model, data_loader, loss_func, optimizer, device):
     print(f"Loss: {loss.item()}")
 
 
-def train(model, data_loader, loss_func, optimizer, device, epochs):
+def train(model, data_loader, loss_func, optimizer, epochs):
     for i in range(epochs):
         print(f"Epoch {i+1}")
-        train_one_epoch(model, data_loader, loss_func, optimizer, device)
+        train_one_epoch(model, data_loader, loss_func, optimizer)
         print("----------------------")
     print("Training Complete")
 
 
 def main():
-    ANNOTATIONS_FILE = r"data\fma_metadata\raw_tracks.csv"
+    ANNOTATIONS_FILE = r"data\test_dataset.csv"
     AUDIO_DIR = r"data\test"
     SAMPLE_RATE = 22050
     NUM_SAMPLES = 22050
@@ -80,10 +79,10 @@ def main():
     optimizer = torch.optim.Adam(cnn_net.parameters(), lr=0.0001)
 
     # Entrenar la red
-    # train(dnn_net, data_loader, loss_func, optimizer, device, EPOCHS)
+    train(cnn_net, data_loader, loss_func, optimizer, EPOCHS)
 
-    # torch.save(dnn_net.state_dict(), "dnn_model.pth")
-    # print("Model Saved!")
+    torch.save(cnn_net.state_dict(), "cnn_net.pth")
+    print("Model Saved!")
 
 
 if __name__ == "__main__":

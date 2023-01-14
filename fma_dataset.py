@@ -37,7 +37,7 @@ class FMADataset(Dataset):
         signal = self._mix_down_if_necessary(signal)
         signal = self._cut_if_necessary(signal)
         signal = self._right_pad_if_necessary(signal)
-        # signal = self.transformation(signal)
+        signal = self.transformation(signal)
         return signal, label
 
     def _cut_if_necessary(self, signal):
@@ -107,6 +107,16 @@ def main():
     train_data, label = fma[0]
     print(train_data.shape)
     print(label)
+
+    df = pd.read_csv(ANNOTATIONS_FILE)
+    tracks_id = []
+    for dirpath, _, filenames in os.walk(AUDIO_DIR):
+        for file in filenames:
+            tracks_id.append(int(file.split(".")[0]))
+    print(tracks_id)
+    new_df = df.loc[df["track_id"].isin(tracks_id)]
+
+    new_df.to_csv("test_dataset.csv", index=False)
 
 
 if __name__ == "__main__":
