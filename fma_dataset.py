@@ -60,7 +60,7 @@ class FMADataset(Dataset):
         resampler = torchaudio.transforms.Resample(sr, self.target_sample_rate)
         resampler = resampler.to(self.device)
         if sr != self.target_sample_rate:
-            print(f"Audio resampled to {self.target_sample_rate} KHz")
+            # print(f"Audio resampled to {self.target_sample_rate} KHz")
             signal = resampler(signal)  # pylint: disable=not-callable
         return signal
 
@@ -84,9 +84,21 @@ class FMADataset(Dataset):
         return label
 
 
+def _create_custom_csv(anno_file, audio_dir):
+    df = pd.read_csv(anno_file)
+    tracks_id = []
+    for _, _, filenames in os.walk(audio_dir):
+        for file in filenames:
+            tracks_id.append(int(file.split(".")[0]))
+    print(tracks_id)
+    new_df = df.loc[df["track_id"].isin(tracks_id)]
+
+    new_df.to_csv("test_dataset.csv", index=False)
+
+
 def main():
     ANNOTATIONS_FILE = r"data\fma_metadata\raw_tracks.csv"
-    AUDIO_DIR = r"data\test"
+    AUDIO_DIR = r"data\fma_small"
     SAMPLE_RATE = 22050
     NUM_SAMPLES = 22050
 
@@ -110,15 +122,7 @@ def main():
     print(train_data.shape)
     print(train_data, label)
 
-    df = pd.read_csv(ANNOTATIONS_FILE)
-    tracks_id = []
-    for _, _, filenames in os.walk(AUDIO_DIR):
-        for file in filenames:
-            tracks_id.append(int(file.split(".")[0]))
-    print(tracks_id)
-    new_df = df.loc[df["track_id"].isin(tracks_id)]
-
-    new_df.to_csv("test_dataset.csv", index=False)
+    _create_custom_csv(ANNOTATIONS_FILE, AUDIO_DIR)
 
 
 if __name__ == "__main__":
