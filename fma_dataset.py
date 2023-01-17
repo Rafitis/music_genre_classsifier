@@ -38,6 +38,8 @@ class FMADataset(Dataset):
         signal = self._cut_if_necessary(signal)
         signal = self._right_pad_if_necessary(signal)
         signal = self.transformation(signal)
+
+        label = torch.tensor(int(label)).to(self.device)
         return signal, label
 
     def _cut_if_necessary(self, signal):
@@ -106,7 +108,7 @@ def main():
     print(f"Num Audios {len(fma)}")
     train_data, label = fma[0]
     print(train_data.shape)
-    print(label)
+    print(train_data, label)
 
     df = pd.read_csv(ANNOTATIONS_FILE)
     tracks_id = []
