@@ -30,7 +30,7 @@ class CNN_Model(nn.Module):
         f_min=0.0,
         f_max=11025.0,
         n_mels=128,
-        num_classes=10,
+        num_classes=16,
     ) -> None:
         super().__init__()
 
