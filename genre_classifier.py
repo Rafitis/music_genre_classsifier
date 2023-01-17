@@ -31,10 +31,10 @@ def load_data(json_path):
 
 
 def train_one_epoch(model, data_loader, loss_func, optimizer):
-    for inputs, targets in data_loader:
-
+    for inputs, labels in data_loader:
+        print(len(inputs), len(labels))
         predictions = model(inputs)
-        loss = loss_func(predictions, targets)
+        loss = loss_func(predictions, labels)
 
         optimizer.zero_grad()
         loss.backward()
@@ -74,7 +74,7 @@ def main():
     # Create CNN
     cnn_net = CNN_Model(num_classes=16).to(device)
     summary(cnn_net, input_size=(1, 64, 44))
-    loss_func = nn.CrossEntropyLoss()
+    loss_func = nn.CrossEntropyLoss(ignore_index=-1)
     optimizer = torch.optim.Adam(cnn_net.parameters(), lr=0.0001)
 
     # Entrenar la red
