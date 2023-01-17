@@ -52,8 +52,8 @@ def train(model, data_loader, loss_func, optimizer, epochs):
 
 
 def main():
-    ANNOTATIONS_FILE = r"data\test_dataset.csv"
-    AUDIO_DIR = r"data\test"
+    ANNOTATIONS_FILE = r"data\full_dataset.csv"
+    AUDIO_DIR = r"data\fma_small"
     SAMPLE_RATE = 22050
     NUM_SAMPLES = 22050
 
