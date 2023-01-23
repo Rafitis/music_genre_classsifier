@@ -31,14 +31,19 @@ def load_data(json_path):
 
 
 def train_one_epoch(model, data_loader, loss_func, optimizer):
-    for inputs, labels in data_loader:
-        print(len(inputs), len(labels))
+    running_loss = 0.0
+    for _, data in enumerate(data_loader):
+        inputs, labels = data
+
         predictions = model(inputs)
         loss = loss_func(predictions, labels)
 
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+
+        # print statistics
+        running_loss += loss.item()
 
     print(f"Loss: {loss.item()}")
 
@@ -69,10 +74,10 @@ def main():
         n_mels=64,
     )
     fma_data = FMADataset(ANNOTATIONS_FILE, AUDIO_DIR, mel_spectrogram, SAMPLE_RATE, NUM_SAMPLES, device)
-    data_loader = DataLoader(fma_data, batch_size=64, shuffle=True)
+    data_loader = DataLoader(fma_data, batch_size=256, shuffle=True)
 
     # Create CNN
-    cnn_net = CNN_Model(num_classes=16).to(device)
+    cnn_net = CNN_Model(num_classes=103).to(device)
     summary(cnn_net, input_size=(1, 64, 44))
     loss_func = nn.CrossEntropyLoss(ignore_index=-1)
     optimizer = torch.optim.Adam(cnn_net.parameters(), lr=0.0001)

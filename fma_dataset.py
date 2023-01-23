@@ -4,6 +4,7 @@ import pandas as pd
 import torch
 import torchaudio
 from torch.utils.data import Dataset
+from mapping_genres_ids import MAPPING_IDs
 
 
 class FMADataset(Dataset):
@@ -39,7 +40,7 @@ class FMADataset(Dataset):
         signal = self._right_pad_if_necessary(signal)
         signal = self.transformation(signal)
 
-        label = torch.tensor(int(label)).to(self.device)
+        label = torch.tensor(label).to(self.device)
         return signal, label
 
     def _cut_if_necessary(self, signal):
@@ -75,13 +76,14 @@ class FMADataset(Dataset):
         return path
 
     def _get_audio_sample_label(self, index):
+
         col_index = self.annotations.columns.get_loc("track_genres")
         genre_data = self.annotations.iloc[index, col_index]
         # Función que cambia un string a lista de dict
         genre_data = list(literal_eval(genre_data))[0]
         # data["mapping"].append(genre_data["genre_title"])
         label = genre_data["genre_id"]
-        return label
+        return MAPPING_IDs[label]  # Se mapea la label
 
 
 def _create_custom_csv(anno_file, audio_dir):
@@ -93,7 +95,7 @@ def _create_custom_csv(anno_file, audio_dir):
     print(tracks_id)
     new_df = df.loc[df["track_id"].isin(tracks_id)]
 
-    new_df.to_csv("test_dataset.csv", index=False)
+    new_df.to_csv("full_dataset.csv", index=False)
 
 
 def main():
@@ -120,7 +122,7 @@ def main():
     print(f"Num Audios {len(fma)}")
     train_data, label = fma[0]
     print(train_data.shape)
-    print(train_data, label)
+    print(label)
 
     _create_custom_csv(ANNOTATIONS_FILE, AUDIO_DIR)
 
