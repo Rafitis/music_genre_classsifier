@@ -1,12 +1,15 @@
 import os
 from ast import literal_eval
+import numpy as np
 import pandas as pd
 import torch
 import torchaudio
+from torchvision.io import read_image
 from torch.utils.data import Dataset
+from skimage import io
 from mapping_genres_ids import MAPPING_IDs
-
-
+import matplotlib.pyplot as plt
+import torchvision.transforms as T
 class FMADataset(Dataset):
     def __init__(
         self,
@@ -31,17 +34,32 @@ class FMADataset(Dataset):
         audio_sample_path = self._get_audio_sample_path(index)
         label = self._get_audio_sample_label(index)
 
-        signal, sr = torchaudio.load(audio_sample_path)
-        signal = signal.to(self.device)
+        # signal, sr = torchaudio.load(audio_sample_path)
+        signal = read_image(audio_sample_path)
+        signal = self._resize_image(signal)
+        # signal = signal.to(self.device)
+        # signal = self._resample_if_necessary(signal, sr)
+        # signal = self._mix_down_if_necessary(signal)
+        # signal = self._cut_if_necessary(signal)
+        # signal = self._right_pad_if_necessary(signal)
+        # signal = self.transformation(signal)
 
-        signal = self._resample_if_necessary(signal, sr)
-        signal = self._mix_down_if_necessary(signal)
-        signal = self._cut_if_necessary(signal)
-        signal = self._right_pad_if_necessary(signal)
-        signal = self.transformation(signal)
-
-        label = torch.tensor(label).to(self.device)
+        # label = torch.tensor(label).to(self.device)
         return signal, label
+
+    def _resize_image(self, signal):
+        transform = T.Resize(255)
+        signal = transform(signal)
+        return signal
+
+    def _spec_to_image(spec, eps=1e-6):
+        mean = spec.mean()
+        std = spec.std()
+        spec_norm = (spec - mean) / (std + eps)
+        spec_min, spec_max = spec_norm.min(), spec_norm.max()
+        spec_scaled = 255 * (spec_norm - spec_min) / (spec_max - spec_min)
+        spec_scaled = spec_scaled.astype(np.uint8)
+        return spec_scaled
 
     def _cut_if_necessary(self, signal):
         # signal -> Tensor (1, num_samples)
@@ -72,7 +90,7 @@ class FMADataset(Dataset):
 
     def _get_audio_sample_path(self, index):
         format_index = f"{int(self.annotations.iloc[index, 0]):06}"
-        path = os.path.join(self.audio_dir, format_index + ".mp3")
+        path = os.path.join(self.audio_dir, format_index + ".png")
         return path
 
     def _get_audio_sample_label(self, index):
@@ -92,7 +110,6 @@ def _create_custom_csv(anno_file, audio_dir):
     for _, _, filenames in os.walk(audio_dir):
         for file in filenames:
             tracks_id.append(int(file.split(".")[0]))
-    print(tracks_id)
     new_df = df.loc[df["track_id"].isin(tracks_id)]
 
     new_df.to_csv("full_dataset.csv", index=False)
@@ -100,7 +117,7 @@ def _create_custom_csv(anno_file, audio_dir):
 
 def main():
     ANNOTATIONS_FILE = r"data\fma_metadata\raw_tracks.csv"
-    AUDIO_DIR = r"data\fma_small"
+    AUDIO_DIR = r"data\mel_spec"
     SAMPLE_RATE = 22050
     NUM_SAMPLES = 22050
 
@@ -121,7 +138,11 @@ def main():
 
     print(f"Num Audios {len(fma)}")
     train_data, label = fma[0]
-    print(train_data.shape)
+    print(train_data.size())
+    img = train_data[0].squeeze().cpu()
+    print(img.shape, img)
+    plt.imshow(img, cmap='gray')
+    plt.show()
     print(label)
 
     _create_custom_csv(ANNOTATIONS_FILE, AUDIO_DIR)
